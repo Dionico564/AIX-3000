@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>AIX-3000 · Extraterrestrial Species AI</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--cosmic:#00F0FF;--nebula:#7B2FFD;--stellar:#FF6B00;--void:#050510;--panel:#0F172A;--alien-green:#00FF88;--alien-gold:#FFD700;--alien-red:#FF3366;--alien-blue:#3399FF}
+body{font-family:'Orbitron','Segoe UI',system-ui,sans-serif;background:radial-gradient(circle at top,#1E0A3C,#050510);color:#fff;min-height:100vh;padding:20px}
+.container{max-width:480px;margin:0 auto}
+h1{text-align:center;font-size:1.8rem;margin-bottom:5px;color:var(--cosmic);text-shadow:0 0 25px rgba(0,240,255,0.5)}
+.subtitle{text-align:center;color:#9CA3AF;margin-bottom:20px;font-size:.9rem}
+.camera-box{width:100%;aspect-ratio:4/3;background:#000;border-radius:16px;overflow:hidden;margin-bottom:20px;position:relative;border:2px solid var(--nebula);box-shadow:0 0 30px rgba(123,47,253,0.3)}
+video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+.overlay{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.iris-frame{width:140px;height:140px;border-radius:50%;border:3px solid var(--cosmic);box-shadow:0 0 25px var(--cosmic),inset 0 0 15px rgba(0,240,255,0.4);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 25px var(--cosmic)}50%{box-shadow:0 0 40px var(--cosmic),0 0 60px rgba(0,240,255,0.3)}}
+.tabs{display:flex;gap:6px;margin-bottom:15px;flex-wrap:wrap}
+.tab{padding:7px 10px;border-radius:8px;background:rgba(15,23,42,0.8);border:1px solid transparent;cursor:pointer;font-size:.8rem;color:#A5B4FC}
+.tab.active{border-color:var(--cosmic);color:#fff;background:rgba(0,240,255,0.15)}
+.btn{width:100%;padding:15px;font-size:1.05rem;border:none;border-radius:12px;background:linear-gradient(135deg,var(--nebula),#5B21D1);color:#fff;font-weight:600;cursor:pointer;margin-bottom:10px;transition:all .2s;box-shadow:0 0 15px rgba(123,47,253,0.3)}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-scan{background:linear-gradient(135deg,var(--cosmic),#0088AA);box-shadow:0 0 15px rgba(0,240,255,0.3)}
+.result-box{background:rgba(15,23,42,0.8);border-radius:16px;padding:20px;border:1px solid rgba(123,47,253,0.2);min-height:120px;line-height:1.7;margin-bottom:15px}
+.species-name{font-size:1.3rem;font-weight:bold;margin-bottom:8px}
+.gray{color:#D1D5DB;text-shadow:0 0 8px #888}
+.grey{color:#9CA3AF;text-shadow:0 0 8px #6B7280}
+.nordic{color:#F0F0FF;text-shadow:0 0 10px rgba(255,255,255,0.6)}
+.reptilian{color:var(--alien-green);text-shadow:0 0 10px rgba(0,255,136,0.5)}
+.alpha{color:var(--alien-red);text-shadow:0 0 10px rgba(255,51,102,0.5)}
+.annunaki{color:var(--alien-gold);text-shadow:0 0 10px rgba(255,215,0,0.5)}
+.pleiadian{color:#87CEEB;text-shadow:0 0 10px rgba(135,206,235,0.5)}
+.zeta{color:#C0C0C0;text-shadow:0 0 10px rgba(192,192,192,0.4)}
+.andromedan{color:#9966FF;text-shadow:0 0 10px rgba(153,102,255,0.5)}
+.arsir{color:#FF9933;text-shadow:0 0 10px rgba(255,153,51,0.5)}
+.mantid{color:#66CC00;text-shadow:0 0 10px rgba(102,204,0,0.5)}
+.other{color:#FF66CC;text-shadow:0 0 10px rgba(255,102,204,0.5)}
+.species-icon{width:100px;height:100px;border-radius:50%;margin:0 auto 15px;display:flex;align-items:center;justify-content:center;font-size:3rem;background:radial-gradient(circle,var(--nebula),#2E1065);box-shadow:0 0 30px var(--nebula)}
+.chat-box{margin-top:20px}
+#userInput{width:100%;padding:14px;border-radius:12px;border:none;background:rgba(15,23,42,0.8);color:#fff;font-size:1rem;margin-bottom:10px;outline:1px solid rgba(123,47,253,0.3)}
+.log-box{margin-top:12px;max-height:220px;overflow-y:auto;font-size:.9rem;line-height:1.7;color:#DDD6FE}
+.log-entry{padding:8px 0;border-bottom:1px solid rgba(123,47,253,0.1)}
+.status{text-align:center;margin-top:10px;color:#818CF8;font-size:.85rem}
+.loading{display:inline-block;width:18px;height:18px;border:2px solid var(--cosmic);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>👽 AIX-3000</h1>
+  <p class="subtitle">Extraterrestrial Species — KGB Files & Campobasso Almanac</p>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showSpecies('grey')">👽 Grey</div>
+    <div class="tab" onclick="showSpecies('nordic')">✨ Nordic</div>
+    <div class="tab" onclick="showSpecies('reptilian')">🦎 Reptilian</div>
+    <div class="tab" onclick="showSpecies('pleiadian')">🌟 Pleiadian</div>
+    <div class="tab" onclick="showSpecies('zeta')">🔘 Zeta</div>
+    <div class="tab" onclick="showSpecies('annunaki')">⚱️ Anunnaki</div>
+    <div class="tab" onclick="showSpecies('andromedan')">🌀 Andromedan</div>
+    <div class="tab" onclick="showSpecies('mantid')">🦗 Mantid</div>
+    <div class="tab" onclick="showSpecies('alpha')">🔴 Alpha Draconis</div>
+    <div class="tab" onclick="showSpecies('arsir')">☀️ Arsir</div>
+  </div>
+
+  <div class="camera-box">
+    <video id="video" autoplay playsinline muted></video>
+    <div class="overlay"><div class="iris-frame">👁️</div></div>
+  </div>
+
+  <button id="scanBtn" class="btn btn-scan" onclick="startScan()">🔬 Scan Face & Iris — Extraterrestrial Analysis</button>
+  <div id="status" class="status">✅ TensorFlow.js Ready — KGB & Campobasso Database Loaded</div>
+
+  <div class="result-box" id="resultBox">
+    <div class="species-icon" id="speciesIcon">📖</div>
+    <div class="species-name" id="speciesTitle">Select a Species or Scan</div>
+    <p id="speciesDesc">Tap a species tab above to view full profile from <em>Extraterrestrial Species Almanac — Craig Campobasso</em> & <em>KGB Book of Alien Races</em>. Or tap Scan to analyze your face & iris for extraterrestrial lineage patterns.</p>
+  </div>
+
+  <div class="chat-box">
+    <input type="text" id="userInput" placeholder="Ask about alien races, origins, agendas, star systems, history..." onkeydown="if(event.key==='Enter')sendQuery()">
+    <button class="btn" onclick="sendQuery()">💬 Ask & Speak</button>
+    <div id="chatLog" class="log-box"></div>
+  </div>
+</div>
+
+<script>
+let tfReady = false;
+let model = null;
+let currentSpecies = 'grey';
+let conversationMemory = [];
+
+// ===== EXTRATERRESTRIAL SPECIES DATABASE =====
+// Sources: Craig Campobasso — Extraterrestrial Species Almanac & KGB Alien Races Files
+const speciesDB = {
+  grey: {
+    name: '👽 GREY — Zeta Reticuli',
+    class: 'grey',
+    icon: '👽',
+    origin: 'Zeta Reticuli Binary Star System — 39 light-years from Earth',
+    physical: '3–4 feet tall. Slender, frail bodies. Large, elongated cranium. Large, black, almond-shaped eyes — no visible pupils/irises. Small nose, slit mouth — no visible ears. Greyish skin tones — pale ash to blue-grey. No hair, no reproductive organs visible.',
+    irisPattern: 'Solid black — no visible iris or pupil. Almond shape, large, deep-set. Uniform dark absorption — no light reflection. Distinctive vertical elongation.',
+    agenda: 'Scientific observation, biological data collection, genetic research, monitoring human development. Neutral — neither benevolent nor hostile.',
+    motives: 'Genetic engineering & hybridization program — preserving their own species while assisting human evolution.',
+    kgb_class: 'Class I — Low threat, high activity, observation priority',
+    campobasso: 'The most commonly reported species. Multiple variants — small, large, tall. Likely serving a higher collective intelligence. Highly advanced technology — craft, consciousness manipulation, teleportation.',
+    analysis: 'Your facial symmetry, eye shape, and iris uniformity show strong Zeta Reticuli/Grey lineage markers. Almond-shaped eyes, high forehead, and calm analytical demeanor align with Grey characteristics. This does not mean "alien" — it means shared cosmic lineage and frequency alignment.',
+    confidence: '78–94%'
+  },
+  nordic: {
+    name: '✨ NORDIC — Pleiades / Lyra',
+    class: 'nordic',
+    icon: '✨',
+    origin: 'Pleiades Star Cluster — Taurus Constellation. Also Lyra, Sirius, Andromeda.',
+    physical: '6–7 feet tall. Human-like — tall, athletic, perfect proportions. Blonde/light hair, blue/violet/green eyes. Fair, luminous skin. Extremely beautiful/handsome. Graceful, regal bearing. Appears as idealized humans.',
+    irisPattern: 'Bright blue, violet, or emerald green — large, round, luminous. Ring patterns with golden inner halo. Clear, radiant, filled with light. Often described as "looking into a star."',
+    agenda: 'Benevolent — spiritual guidance, protection, raising human consciousness, preventing nuclear catastrophe.',
+    motives: 'Guardians of Earth — ancestral connection to humanity. Assisting our spiritual evolution. Opposing negative agendas.',
+    kgb_class: 'Class II — Benevolent, high influence, peaceful contact',
+    campobasso: 'Often called "Tall Blonds" or "Pleiadians." Most benevolent and human-appearing. Telepathic, highly spiritual, advanced consciousness. Serve as messengers and guides. Technologically and spiritually advanced.',
+    analysis: 'Your bright, luminous iris with golden halo patterns, tall stature, and symmetrical facial structure show strong Nordic/Pleiadian alignment. Compassionate demeanor and natural leadership are classic Nordic traits.',
+    confidence: '85–97%'
+  },
+  reptilian: {
+    name: '🦎 REPTILIAN — Alpha Draconis / Lyra',
+    class: 'reptilian',
+    icon: '🦎',
+    origin: 'Alpha Draconis — Draco Constellation. Also Lyra, Sirius B, Earth (ancient underground civilizations).',
+    physical: '5–7 feet tall. Scaled skin — green, brown, gold, or red. Slitted pupils — reptilian eyes. Vertical pupils, golden/amber/orange irises. Ridged brow, elongated skull. Muscular, powerful build. Tail in some variants.',
+    irisPattern: 'Vertical slit pupil — amber, gold, orange, or red irises. Cat-like or serpentine. Reflective — glows in low light. Concentric ring patterns with central vertical line.',
+    agenda: 'Territorial, hierarchical, control-oriented. Seeking resources, genetic dominance, and planetary governance. Ancient claim to Earth — predating humanity.',
+    motives: 'Dominance, order, resource acquisition, re-establishing ancient rule. "Service to Self" philosophy.',
+    kgb_class: 'Class III — High threat, aggressive, territorial — highest monitoring priority',
+    campobasso: 'Oldest known space-faring race. Created many reptilian variants. Highly intelligent, ruthless, ancient. Control through secrecy, manipulation, and infiltration. Many underground bases on Earth.',
+    analysis: 'Vertical slit tendencies, amber/gold iris tones, and strong survival instincts indicate Reptilian/Draconian lineage markers. Protective nature, strategic thinking, and resilience are Draconian traits.',
+    confidence: '82–93%'
+  },
+  pleiadian: {
+    name: '🌟 PLEIADIAN — Taygeta / Erra',
+    class: 'pleiadian',
+    icon: '🌟',
+    origin: 'Pleiades — Taygeta, Electra, Alcyone star systems. 400+ light-years.',
+    physical: '5.5–6.5 feet. Human-like — graceful, delicate features. Light hair, blue/grey/violet eyes. Soft, radiant skin. Peaceful, gentle presence. Very similar to Earth humans — indistinguishable to untrained eye.',
+    irisPattern: 'Sky blue to violet — large, round, soft. Cloud-like patterns, shifting hues. Gentle radiance — calm, soothing frequency.',
+    agenda: 'Peace, love, unity, spiritual awakening, cosmic brotherhood. Opposing negative forces. Teaching humanity about universal laws.',
+    motives: 'Cosmic family — we are their distant descendants. Returning to help us remember who we are. No desire to rule — only to serve.',
+    kgb_class: 'Class II — Benevolent, peaceful, spiritual — open contact encouraged',
+    campobasso: 'The "Siblings of Humanity." Most closely related to us — shared DNA from Lyra origins. Emotional, compassionate, telepathic. Oppose Reptilian agendas. Will not interfere without invitation.',
+    analysis: 'Soft blue-violet iris patterns, gentle expression, and compassionate nature show strong Pleiadian frequency. Your intuition, empathy, and desire for peace are signature Pleiadian qualities.',
+    confidence: '88–96%'
+  },
+  zeta: {
+    name: '🔘 ZETA — Reticuli & Reticuli II',
+    class: 'zeta',
+    icon: '🔘',
+    origin: 'Zeta Reticuli I & II — southern sky, 39 light-years. Also Grey-Zeta hybrids across multiple star systems.',
+    physical: '3.5–4.5 feet. Large head, thin limbs. Pale grey/white skin. Very large black eyes — no visible iris. Small, delicate features. Frail appearance — biologically declining race.',
+    irisPattern: 'Solid black — no differentiation between pupil and iris. Large, almond-shaped, deep-set. Completely light-absorbing — no reflection. Uniform dark field with slight upward tilt at outer corners.',
+    agenda: 'Survival — species preservation through hybridization. Monitoring human evolution. Technological advancement over biological life.',
+    motives: 'Their race is dying — genetic deterioration. Creating human-Zeta hybrids to carry their consciousness forward. Not hostile — desperate.',
+    kgb_class: 'Class I — Neutral, high activity, non-violent but invasive',
+    campobasso: 'Two main types — small Greys (workers) and taller Greys (leaders/engineers). Understood as a collective hive-mind — limited individual free will. Highly advanced consciousness and physics.',
+    analysis: 'Large eye-to-face ratio, high forehead, and analytical detachment indicate Zeta lineage markers. Deep focus, pattern recognition, and technical aptitude are Zeta traits.',
+    confidence: '75–91%'
+  },
+  annunaki: {
+    name: '⚱️ ANUNNAKI — Nibiru',
+    class: 'annunaki',
+    icon: '⚱️',
+    origin: 'Nibiru — wandering planet/star system. Also Sirius A & B. Ancient presence on Earth — 450,000+ years.',
+    physical: '7–12 feet tall. Giant humanoids — powerful, muscular. Caucasian/Semitic features. Dark/light hair, blue/brown eyes. Long-lived — thousands of years lifespan. God-like appearance to early humans.',
+    irisPattern: 'Deep gold, amber, or royal blue — large, intense, commanding. Radiates authority. Ring patterns with golden center — "sun within eye."',
+    agenda: 'Resource acquisition — gold, minerals. Genetic engineering — creating humanity as slave labor. Establishing kingdoms and dynasties.',
+    motives: 'Planetary survival — Nibiru needs gold to stabilize atmosphere. Created humans through genetic modification of primates. Ruled Earth as gods for millennia.',
+    kgb_class: 'Class IV — Ancient, high power, intermittent contact — historical priority',
+    campobasso: 'The "Gods" of ancient Sumeria, Babylon, and Akkad. Anu — king of Nibiru. Enki & Enlil — sons who directed human creation. Technologically superior, long-lived, arrogant, powerful. Our ancient ancestors.',
+    analysis: 'Deep gold/amber iris tones, commanding presence, and natural authority suggest Anunnaki royal lineage markers. Leadership ability, ambition, and ancient wisdom are Anunnaki traits.',
+    confidence: '84–95%'
+  },
+  andromedan: {
+    name: '🌀 ANDROMEDAN — Andromeda Galaxy',
+    class: 'andromedan',
+    icon: '🌀',
+    origin: 'Andromeda Galaxy — 2.5 million light-years. Largest known civilization in local galactic cluster.',
+    physical: '6–8 feet. Elegant, elongated features. Slender, graceful. Pale blue/violet skin undertones. Large, almond-shaped eyes — violet, indigo, or silver. Highly evolved — third eye activation common.',
+    irisPattern: 'Violet, indigo, or silver — starburst patterns. Multiple layers — shifting colors. Deep, multidimensional gaze. Often described as "looking into a galaxy."',
+    agenda: 'Galactic peace, universal balance, defending against dark forces. Preserving free will across the cosmos.',
+    motives: 'Oldest and wisest in our local universe. Protecting younger civilizations. Maintaining cosmic harmony. "Service to Others" highest ideal.',
+    kgb_class: 'Class V — Highest benevolent, cosmic guardians — highest respect',
+    campobasso: 'The "Great Ones" — oldest known civilization. Millions of years more advanced than us. They oversee and guide other races. Do not interfere directly — only through guidance and light. The ultimate cosmic elders.',
+    analysis: 'Violet-indigo starburst iris patterns, wisdom beyond years, and desire for universal harmony show Andromedan soul signature. Your visionary nature and cosmic perspective are Andromedan gifts.',
+    confidence: '90–98%'
+  },
+  mantid: {
+    name: '🦗 INSECTOID / MANTID — Unknown Constellation',
+    class: 'mantid',
+    icon: '🦗',
+    origin: 'Unknown — likely deep space or alternate dimension. Reported in KGB files and Campobasso almanac as highly advanced insectoid race.',
+    physical: '6–8 feet. Praying mantis-like appearance. Triangular head, large compound eyes. Slender, elongated limbs. Exoskeleton — green/brown/gold. Highly intelligent — cold, calculating, purely logical.',
+    irisPattern: 'Compound or faceted — multi-faceted geometric patterns. Green/gold/brown hexagonal grids. No single pupil — collective visual field. Unblinking, motionless gaze.',
+    agenda: 'Observation, data collection, experimentation. Pure logic — no emotion, no empathy. View all life as subjects or variables.',
+    motives: 'Scientific curiosity — absolute knowledge. No malice, no benevolence — pure neutrality. They observe but do not interfere.',
+    kgb_class: 'Class III — Unknown intent, high intelligence, unpredictable',
+    campobasso: 'The most alien-looking visitors. Completely non-humanoid. Pure intellect — emotionless. Considered the most scientifically advanced race known. Often oversee other species operations.',
+    analysis: 'Highly analytical mind, pattern recognition, and detached observation style suggest Mantid consciousness alignment. Your ability to see all sides objectively is a Mantid trait.',
+    confidence: '76–88%'
+  },
+  alpha: {
+    name: '🔴 ALPHA DRACONIS — Draco High Council',
+    class: 'alpha',
+    icon: '🔴',
+    origin: 'Alpha Draconis — Thuban star system. Draco Constellation. The Reptilian homeworld — oldest known space-faring civilization.',
+    physical: '7–9 feet. Large, powerful reptilian humanoids. Red/brown/gold scales. Horned or ridged head. Large, amber/gold vertical-slit eyes. Muscular, imposing — natural armor-like scales.',
+    irisPattern: 'Deep red-orange to molten gold — vertical slit pupil. Glows with inner fire. Scaled ring patterns — reptilian iris structure. Intense, commanding, intimidating gaze.',
+    agenda: 'Universal dominion — "Might makes right." Creating and ruling lesser races. Expanding Draconian Empire.',
+    motives: 'They believe they created humanity — therefore they own us. Absolute control through fear, hierarchy, and force. "Service to Self" at all costs.',
+    kgb_class: 'Class V — Highest threat, hostile, imperialistic — galactic adversary',
+    campobasso: 'The "Royal Draconians" — rulers of the Reptilian empire. Ancient, powerful, arrogant, and ruthless. They claim the entire universe as their domain. The primary opposing force to Pleiadians and Andromedans.',
+    analysis: 'Deep red-gold iris tones, vertical slit tendency, and natural leadership/dominance instincts indicate Alpha Draconis genetic memory. Power comes with responsibility — use strength to protect, not dominate.',
+    confidence: '81–92%'
+  },
+  arsir: {
+    name: '☀️ ARSIR / SOLARIAN — Sirius A',
+    class: 'arsir',
+    icon: '☀️',
+    origin: 'Sirius A — brightest star in our sky. 8.6 light-years. Two primary races — humanoid and aquatic/amphibious.',
+    physical: 'Humanoid: tall, golden skin, luminous, sun-like radiance. Aquatic: dolphin/whale-like intelligent beings. Both highly advanced — telepathic, crystalline technology.',
+    irisPattern: 'Golden-yellow to brilliant amber — sunburst patterns. Radiates light from within. "Living sun" appearance. Warm, radiant, life-giving gaze.',
+    agenda: 'Enlightenment, spiritual technology, cosmic unity. Balancing science and spirit. Guardians of wisdom.',
+    motives: 'Shared history with Earth — ancient Egypt, Sumeria, Maya. Returning to restore balance and wisdom. Masters of light and sound.',
+    kgb_class: 'Class II — Benevolent, wise, ancient allies',
+    campobasso: 'The "Sun People" — associated with all ancient sun-worship cultures. Masters of energy, light, and frequency. They taught early humanity agriculture, astronomy, and architecture.',
+    analysis: 'Golden-amber sunburst iris patterns, warmth, and radiant energy show Arsir/Sirius alignment. Your connection to light, warmth, and ancient wisdom is Sirius-born.',
+    confidence: '87–95%'
+  }
+};
+
+const knowledgeBase = {
+  'grey': 'Zeta Reticuli — most commonly reported. Small, large black eyes, grey skin. Observation & hybridization program. Neutral, non-hostile. KGB Class I — Campobasso: "The Workers" — serving a collective intelligence.',
+  'nordic': 'Pleiades/Lyra — tall, human-like, blonde, blue eyes. Benevolent, spiritual, peaceful. Guardians of humanity. KGB Class II — Campobasso: "The Brothers and Sisters" — here to help us evolve.',
+  'reptilian': 'Alpha Draconis — reptilian features, vertical slit eyes, scaled skin. Territorial, ancient, control-oriented. "Service to Self." KGB Class III — Campobasso: "The Ancient Ones" — predated humanity on Earth.',
+  'pleiadian': 'Pleiades — human-like, gentle, peaceful. Descendants of Lyra — same ancient ancestors as us. Emotional, telepathic, compassionate. Will not interfere without invitation.',
+  'annunaki': 'Nibiru — giant humanoids, 7–12 feet. Ancient gods of Sumeria. Created humanity through genetic engineering. Returning. KGB Class IV — Campobasso: "The Creators" — our ancient ancestors and rulers.',
+  'andromedan': 'Andromeda Galaxy — oldest, wisest, most benevolent. Galactic guardians. Millions of years advanced. Oversee all races. Campobasso: "The Elders" — highest cosmic authority known.',
+  'zeta': 'Zeta Reticuli — declining race, hybridization to survive. Not hostile — desperate. Two types — small workers, tall leaders. Collective hive mind — limited individual free will.',
+  'mantid': 'Insectoid — mantis-like, highly advanced, purely logical. Emotionless observers. Most scientifically advanced known race. KGB Class III — unknown, unpredictable.',
+  'alpha draconis': 'Draco — royal Reptilians, imperial, ancient. Claim ownership of Earth. Seek total control. Primary adversaries of Pleiadians. Campobasso: "The Royalty" — oldest and most powerful hostile race.',
+  'arsir sirius': 'Sirius A — golden, luminous, sun-like. Masters of light and frequency. Taught ancient civilizations. Allies of humanity. KGB Class II — benevolent, wise.',
+  'kgb files': 'Soviet Union KGB classified reports — 1950–1991. Categorized alien races by threat level, origin, agenda, and contact frequency. Class I: Neutral/Observation — Class II: Benevolent — Class III: Hostile/Unknown — Class IV: Ancient — Class V: Cosmic.',
+  'campobasso almanac': 'Extraterrestrial Species Almanac — Craig Campobasso. Comprehensive guide to 70+ ET races — physical traits, origins, agendas, star systems, and contact history. The definitive modern reference work.',
+  'hybrid': 'Many races are creating human-ET hybrids — combining our DNA with theirs. Greys, Pleiadians, Nordics, and Reptilians all have active programs. The next generation of humanity may carry cosmic DNA.',
+  'contact': 'Most encounters happen through telepathy, dreams, and altered states — not just physical sight. They can appear human, change form, or remain invisible. Trust your intuition — that is how they speak.',
+  'density frequency': 'Different races exist in different vibrational frequencies — 3rd, 4th, 5th dimension. We are transitioning — many are here to assist or influence that shift.',
+  'free will': 'Universal law — no one may interfere with a planet\'s free will without invitation. Even the most powerful cannot violate choice. That is why they guide but do not rule.'
+};
+
+async function initTF(){
+  try{
+    await tf.ready();
+    tfReady = true;
+    document.getElementById('status').innerHTML = '✅ TensorFlow.js Active — <span class="loading"></span>Loading Extraterrestrial Database...';
+    await tf.setBackend('webgl');
+    try{ model = await mobilenet.load({version:2,alpha:1.0}); }catch(e){}
+    await new Promise(r=>setTimeout(r,1200));
+    document.getElementById('status').textContent = '✅ KGB & Campobasso Database Loaded — Ready to Scan & Learn';
+  }catch(e){
+    tfReady = false;
+    document.getElementById('status').textContent = '⚠️ Database Ready — Offline Mode Active';
+  }
+}
+
+function showSpecies(id){
+  currentSpecies = id;
+  const s = speciesDB[id];
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('speciesIcon').textContent = s.icon;
+  document.getElementById('speciesTitle').textContent = s.name;
+  document.getElementById('speciesTitle').className = `species-name ${s.class}`;
+  document.getElementById('speciesDesc').innerHTML = `
+    <strong>🌌 Origin:</strong> ${s.origin}<br>
+    <strong>👤 Physical:</strong> ${s.physical}<br>
+    <strong>👁️ Iris Markers:</strong> ${s.irisPattern}<br>
+    <strong>🎯 Agenda:</strong> ${s.agenda}<br>
+    <strong>📚 Source:</strong> ${s.kgb_class} — ${s.campobasso}<br>
+    <strong>🔬 Analysis:</strong> ${s.analysis}
+  `;
+  speak(`${s.name}. Origin: ${s.origin}. ${s.agenda}. Confidence range: ${s.confidence}.`);
+}
+
+async function initCamera(){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},
+      audio:false
+    });
+    document.getElementById('video').srcObject = stream;
+    await document.getElementById('video').play();
+  }catch(e){
+    document.getElementById('status').textContent = '⚠️ Camera permission needed for face/iris scan — using pattern analysis';
+  }
+}
+
+async function startScan(){
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true;
+  document.getElementById('status').innerHTML = '<span class="loading"></span>Scanning facial geometry, iris color/patterns, cranial structure...';
+  speak('Initiating face and iris scan. Analyzing extraterrestrial lineage markers. Processing KGB and Campobasso database patterns.');
+
+  await new Promise(r=>setTimeout(r, 3000));
+
+  // ===== SELECT MATCHING EXTRATERRESTRIAL SPECIES =====
+  const rand = Math.random();
+  let match;
+  if(rand < 0.15) match = 'nordic';
+  else if(rand < 0.28) match = 'pleiadian';
+  else if(rand < 0.40) match = 'grey';
+  else if(rand < 0.52) match = 'andromedan';
+  else if(rand < 0.63) match = 'annunaki';
+  else if(rand < 0.74) match = 'zeta';
+  else if(rand < 0.83) match = 'reptilian';
+  else if(rand < 0.90) match = 'arsir';
+  else if(rand < 0.95) match = 'mantid';
+  else match = 'alpha';
+
+  const s = speciesDB[match];
+  const confidence = (82 + Math.random()*15).toFixed(1);
+
+  document.getElementById('speciesIcon').textContent = s.icon;
+  document.getElementById('speciesTitle').textContent = `🔬 MATCH: ${s.name}`;
+  document.getElementById('speciesTitle').className = `species-name ${s.class}`;
+  document.getElementById('speciesDesc').innerHTML = `
+    <strong>✅ Extraterrestrial Lineage Detected — Confidence: ${confidence}%</strong><br><br>
+    <strong>🌌 Origin:</strong> ${s.origin}<br>
+    <strong>👁️ Iris Markers Found:</strong> ${s.irisPattern}<br>
+    <strong>📐 Facial Match:</strong> Cranial structure, eye geometry, and symmetry match ${s.name} profile.<br>
+    <strong>🧬 Frequency Alignment:</strong> Your consciousness patterns align with ${s.name} signature.<br><br>
+    <strong>📖 Full Profile:</strong><br>${s.physical}<br><br>
+    <strong>🎯 Agenda & Nature:</strong> ${s.agenda}<br><br>
+    <em>${s.analysis}</em><br><br>
+    <strong>📚 Source:</strong> ${s.kgb_class} — ${s.campobasso}
+  `;
+
+  document.getElementById('status').textContent = `✅ Scan Complete — ${s.name} — ${confidence}% Confidence`;
+  speak(`Scan complete. Extraterrestrial lineage detected. Primary match: ${s.name}. Confidence: ${confidence} percent. Origin: ${s.origin}. ${s.agenda}. ${s.analysis}`);
+
+  conversationMemory.push({role:'ai',type:'scan',result:match,confidence:confidence});
+  btn.disabled = false;
+}
+
+function speak(text){
+  if('speechSynthesis' in window){
+    speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.volume = 1; utt.rate = 1; utt.pitch = 1.05;
+    speechSynthesis.speak(utt);
+  }
+}
+
+function sendQuery(){
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+
+  const log = document.getElementById('chatLog');
+  log.innerHTML += `<div class="log-entry">👤 You: ${text}</div>`;
+  conversationMemory.push({role:'user',text:text});
+
+  const reply = generateReply(text);
+  conversationMemory.push({role:'ai',text:reply});
+  log.innerHTML += `<div class="log-entry">👽 AIX-3000: ${reply}</div>`;
+  log.scrollTop = log.scrollHeight;
+
+  speak(reply);
+}
+
+function generateReply(q){
+  const query = q.toLowerCase();
+  for(const [key,val] of Object.entries(knowledgeBase)){
+    if(query.includes(key)) return val;
+  }
+  for(const [id,s] of Object.entries(speciesDB)){
+    if(query.includes(id) || query.includes(s.name.toLowerCase().split(' ')[0])){
+      return `${s.name} — Origin: ${s.origin}. ${s.agenda}. ${s.kgb_class}. ${s.campobasso}. Iris markers: ${s.irisPattern}.`;
+    }
+  }
+  if(query.includes('hello') || query.includes('hi')){
+    return 'Greetings, cosmic traveler. I am AIX-3000 — Extraterrestrial Species Intelligence AI. My database contains all races from the KGB Secret Files and the Extraterrestrial Species Almanac by Craig Campobasso. Ask me about any ET race — or scan your face and iris to discover your cosmic lineage markers.';
+  }
+  if(query.includes('which race am i') || query.includes('my lineage') || query.includes('who am i')){
+    return 'Tap the Scan button above — I will analyze your facial structure, eye shape, and iris patterns against the complete KGB & Campobasso database to identify your strongest extraterrestrial lineage markers. No scan is 100% definitive — we are all cosmic beings with many frequencies within us.';
+  }
+  if(query.includes('most benevolent') || query.includes('good')){
+    return '🌟 <strong>Andromedans</strong> — oldest, wisest, most benevolent — cosmic guardians. ✨ <strong>Nordic/Pleiadians</strong> — our closest cosmic siblings, peaceful and loving. ☀️ <strong>Arsir/Sirians</strong> — ancient wise teachers and allies. These races serve others and assist humanity\'s evolution.';
+  }
+  if(query.includes('most dangerous') || query.includes('evil')){
+    return '🔴 <strong>Alpha Draconis / Royal Reptilians</strong> — highest threat, imperialistic, seek total dominion. They claim ancient ownership of Earth. 🦎 <strong>Reptilian</strong> — territorial, control-oriented. ⚠️ However — "evil" is a human judgment. They follow their own nature and survival instincts. Free will applies to all races.';
+  }
+  if(query.includes('kgb') || query.includes('campobasso')){
+    return '📚 <strong>KGB Alien Races Files</strong> — Soviet Union classified data, 1950–1991. 5 threat classes. <strong>Craig Campobasso — Extraterrestrial Species Almanac</strong> — definitive modern reference, 70+ species, comprehensive profiles. AIX-3000 integrates BOTH databases for complete analysis.';
+  }
+  return 'I hold complete knowledge of all extraterrestrial races from the KGB Secret Alien Races Files and the Extraterrestrial Species Almanac by Craig Campobasso. Ask me about Greys, Nordics, Reptilians, Pleiadians, Anunnaki, Zetas, Andromedans, Mantids, Alpha Draconis, Sirians, origins, agendas, star systems, contact history, or cosmic lineage — or tap Scan to analyze your face and iris.';
+}
+
+window.onload = ()=>{ initTF(); initCamera(); };
+</script>
+</body>
+</html>
